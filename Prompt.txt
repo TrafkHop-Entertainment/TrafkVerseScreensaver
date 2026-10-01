@@ -1,0 +1,21 @@
+Ich habe eine Aufgabe für dich:
+
+Schreibe ein kleines Programm, welches aus Random Noise beim Start Muster, Tiere, Sachen, etc generiert. Diese Muster sind farbig, volle Farben, knalligere, keine farblosen kahlen Farben, schon knalliges Rot oder Lila oder Limettengrün, etc.
+Alles fängt mit schwarzem noise an welches sehr kleine farbige punkte überall hat. durch zufall sollen dadurch immer wieder neue muster/etc rauskommen, die sich nach einer zeit in neue muster/random noise morphen sollen. alles zufällig.
+Es ist feines noise, also viele kleine punkte/pixel von mir aus. nichts all zu großes. wenn die breite 1m wäre, dann wäre ein punkt sicherlich nichtmal 1µm oder nm. also sehr klein. im programm soll das auch sehr klein sein, natürlich nur so klein, dass es nicht all zu viel leistung frisst. es soll scalebar sein, nicht vollbild(außer man setzt es in vollbild, aber das ist dann ja automatisch vom system).
+Gleichzeitig soll Musik aus der noise generiert werden. nicht von der schwarz/grauen noise, sondern von der farbigen. Eine SF2 Datei darf für die Instrumente benutzt werden – pro farbe ein anderes und bei jedem start des programms natürlich das auch alles anders.
+
+Ein Beispiel:
+Wenn man seine Augen schließt ist alles schwarz.
+Durch das Gehirn entsteht Noise aus schwarzen und grauen punkten (im schwarzweiß spektrum).
+Nach ein paar sekunden bis minuten werden teile der noise größer und öfert farbig. dieses bissl größere (nur manchmal größer) noise formt muster, dinge, tätigkeiten, animationen, etc.
+Es verändert sich stätig, aber nicht zu schnell, das noise selber ist zwar immer am herumwuseln, die muster aber bestehen für einige sekunden bis ein paar minuten.
+Das ist was ich ca haben will.
+
+Also ein C Linux (wayland, pipewire/pulse) Programm, welches das obrige macht.
+
+Die SF2 Datei ist im anhang, das programm sollte jedoch jede sf2 datei nutzen können und per zufall entscheiden was wo bei welcher farbe genutzt wird.
+der farbberich soll/muss nich groß sein. je größer der noise pixel, desto heller der punkt. das schwarze/graue base noise darf nie größer werden und nicht seine farbe wechseln. es ist der hinergrund und base ausdem der andere noise immer wieder entsteht/hingeht.
+Also alle hauptfarben (rot, orange, lila, türkies, alle standard farben. so 35 sollten reichen. soll nach start variieren. von so 5 bis 35 farben soll es variieren.). helligkeit hängt von der punkte größe ab. genausoklein wie die hintergrundpunkte ist es fast schwarz/grau – schon unterscheidbar. wenn halbwegs groß ganz hell. ein punkt darf maximal beim 1m breie beispiel 1cm groß sein. Wie gesagt, die größe der Muster variiert immer. im laufe des programms soll es die muster immer wieder verändern, öfters auch wieder alles ins noise zurückfließen – wobei nach dem start das hintergrund noise nie ganz ohne farbe ist. ab nach ner gewissen zeit sollten auf leicht farbige – sehr dunkle punkte (meißt rot) dabei sein – natürlich nicht größer als schwarzweiß hintergrund noise, da es auch zum hintergrund gehört, aber ja. und nochmal: die muster und alles stammen von diesem hintergrund noise ab. manche punkte transformieren sich vom hintergrund noise ins "vordergrund" noise mit farbe (mache muster und so können auch weiß sein, da ganz weißes hintergrund noise nicht existiert).
+
+Das programm muss portable (ohne irgendwas installieren zu müssen, ähnlich wie ein appimage) sein und offline startbar sein. eine einzige datei. Die SF2 Datei/n sind dann im selben ordner wie das programm selbst. wenn keine sf2 datei da ist, kein sound. esc beendet das ding. fps ist vsync. monitor system hz sync. Die muster können alles sein – von linie über geometrisches bishin zu sichtbaren animationen von nem mann der springt. alles kann dabei sein (soweit man was sinnvollen ranomizen kann hald.)

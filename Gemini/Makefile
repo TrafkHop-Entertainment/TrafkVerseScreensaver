@@ -1,0 +1,1 @@
+gcc -O3 main.c -o random_noise -lSDL2 -lm
