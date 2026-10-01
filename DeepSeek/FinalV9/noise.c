@@ -1416,10 +1416,36 @@ static void gen_colors(void) {
     if (n_gray) {colors[idx][0]=colors[idx][1]=colors[idx][2]=128; idx++;}
 }
 
-static char sf2_path[512];
+static char sf2_path[1024];
+static char exe_dir[512];
+
+// Directory of the running executable (not the current working directory).
+static void get_exe_dir(void) {
+    ssize_t n = readlink("/proc/self/exe", exe_dir, sizeof(exe_dir) - 1);
+    if (n > 0) {
+        exe_dir[n] = 0;
+        char *slash = strrchr(exe_dir, '/');
+        if (slash) {
+            if (slash == exe_dir) slash[1] = 0;   // binary directly in "/"
+            else                  *slash = 0;
+            return;
+        }
+    }
+    // Fallback: SDL's own idea of the base path
+    char *base = SDL_GetBasePath();
+    if (base) {
+        snprintf(exe_dir, sizeof(exe_dir), "%s", base);
+        size_t l = strlen(exe_dir);
+        if (l > 1 && exe_dir[l - 1] == '/') exe_dir[l - 1] = 0;
+        SDL_free(base);
+        return;
+    }
+    snprintf(exe_dir, sizeof(exe_dir), ".");
+}
 
 static int find_sf2(void) {
-    DIR *d = opendir(".");
+    get_exe_dir();
+    DIR *d = opendir(exe_dir);
     if (!d) return 0;
     char cand[64][256]; int n=0;
     struct dirent *de;
@@ -1433,8 +1459,7 @@ static int find_sf2(void) {
     closedir(d);
     if (!n) return 0;
     int pick = (int)(xr() % (uint32_t)n);
-    strncpy(sf2_path, cand[pick], 511);
-    sf2_path[511] = 0;
+    snprintf(sf2_path, sizeof(sf2_path), "%.511s/%.255s", exe_dir, cand[pick]);
     return 1;
 }
 static void assign_presets(void) {
