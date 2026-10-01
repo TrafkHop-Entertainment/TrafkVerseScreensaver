@@ -1,17 +1,21 @@
 #!/usr/bin/env bash
-# Copyright © 2026 TrafkHop Entertainment™
-# All rights reserved.
 # Install.sh – TrafkVerseScreensaver (DeepSeek/FinalV9) herunterladen, bauen und installieren
 set -euo pipefail
 
 # ---------------------------------------------------------------- Konfiguration
-SCREENSAVER_COMMIT="545b8cdf939a76491eae64ff6f3d1104ae17b001"
-SF2_COMMIT="f564d66ff160705a5e6289592ebf0888d822141e"
+# Welcher Stand wird geholt? "HEAD" = immer die neueste Version des Standard-Branches.
+# Zum Festpinnen auf einen Stand statt HEAD einen Commit-Hash eintragen
+# (oder beim Aufruf: SCREENSAVER_REF=<hash> ./Install.sh)
+SCREENSAVER_REF="${SCREENSAVER_REF:-HEAD}"
+SF2_REF="${SF2_REF:-HEAD}"
+ICON_REF="${ICON_REF:-HEAD}"
 
-BASE_URL="https://raw.githubusercontent.com/TrafkHop-Entertainment/TrafkVerseScreensaver/${SCREENSAVER_COMMIT}/DeepSeek/FinalV9"
-SF2_URL="https://raw.githubusercontent.com/TrafkHop-Entertainment/SourceHop-Audios/${SF2_COMMIT}/TrafkSF2.sf2"
+BASE_URL="https://raw.githubusercontent.com/TrafkHop-Entertainment/TrafkVerseScreensaver/${SCREENSAVER_REF}/DeepSeek/FinalV9"
+SF2_URL="https://raw.githubusercontent.com/TrafkHop-Entertainment/SourceHop-Audios/${SF2_REF}/TrafkSF2.sf2"
 
 INSTALL_DIR="${HOME}/.local/share/TrafkHopEntertainment/TrafkVerseScreensaver"
+ICON_URL="https://raw.githubusercontent.com/TrafkHop-Entertainment/TrafkVerseScreensaver/${ICON_REF}/Icon.png"
+
 DESKTOP_DIR="${HOME}/.local/share/applications"
 DESKTOP_FILE="${DESKTOP_DIR}/TrafkVerseScreensaver.desktop"
 
@@ -94,19 +98,43 @@ if [ "$(head -c 4 "${BUILD_DIR}/TrafkSF2.sf2")" != "RIFF" ]; then
     err "Der Screensaver läuft dann ohne Ton. Prüfe die URL: ${SF2_URL}"
 fi
 
+info "Lade Icon (Icon.png) herunter ..."
+wget -q --show-progress -O "${BUILD_DIR}/Icon.png" "$ICON_URL"
+if [ "$(head -c 4 "${BUILD_DIR}/Icon.png" | tail -c 3)" != "PNG" ]; then
+    err "Icon.png ist keine gültige PNG-Datei. Prüfe die URL: ${ICON_URL}"
+    exit 1
+fi
+
+# Läuft noch eine alte Instanz? (wird nicht beendet, nur gemeldet)
+if pgrep -x noise >/dev/null 2>&1; then
+    info "Hinweis: 'noise' läuft gerade. Die neue Version wird erst nach einem Neustart des Screensavers genutzt."
+fi
+
 # Dateien kopieren; bestehende werden überschrieben
-for f in noise TrafkSF2.sf2; do
-    if [ -e "${INSTALL_DIR}/${f}" ]; then
+for f in noise TrafkSF2.sf2 Icon.png; do
+    if [ -e "${INSTALL_DIR}/${f}" ] || [ -L "${INSTALL_DIR}/${f}" ]; then
         info "${f} existiert bereits, wird überschrieben."
     else
         info "Installiere ${f} ..."
     fi
 done
 
-# noise: zuerst entfernen, damit es auch klappt, wenn es gerade läuft ("Text file busy")
-rm -f "${INSTALL_DIR}/noise"
-install -m 755 "${BUILD_DIR}/noise" "${INSTALL_DIR}/noise"
+# noise: erst unter temporärem Namen im Zielordner ablegen, dann per mv ersetzen.
+# mv ist atomar und klappt auch, wenn die alte Datei gerade läuft ("Text file busy").
+install -m 755 "${BUILD_DIR}/noise" "${INSTALL_DIR}/.noise.new"
+mv -f "${INSTALL_DIR}/.noise.new" "${INSTALL_DIR}/noise"
+
 install -m 644 "${BUILD_DIR}/TrafkSF2.sf2" "${INSTALL_DIR}/TrafkSF2.sf2"
+install -m 644 "${BUILD_DIR}/Icon.png"     "${INSTALL_DIR}/Icon.png"
+
+# Kontrolle: stimmen die installierten Dateien mit den frisch gebauten/geladenen überein?
+for f in noise TrafkSF2.sf2 Icon.png; do
+    if ! cmp -s "${BUILD_DIR}/${f}" "${INSTALL_DIR}/${f}"; then
+        err "${f} im Zielordner stimmt nicht mit der neuen Version überein!"
+        exit 1
+    fi
+done
+ok "Alle Dateien installiert und verifiziert."
 
 # ---------------------------------------------------------------- .desktop-Datei
 [ -e "$DESKTOP_FILE" ] && info ".desktop-Datei existiert bereits, wird überschrieben." || info "Erstelle .desktop-Datei ..."
@@ -117,6 +145,7 @@ Type=Application
 Name=TrafkVerseScreensaver
 Exec=${INSTALL_DIR}/noise
 Path=${INSTALL_DIR}
+Icon=${INSTALL_DIR}/Icon.png
 Terminal=false
 Categories=Game;
 EOF
@@ -128,4 +157,5 @@ command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$
 ok "Installation abgeschlossen!"
 echo "    Programm : ${INSTALL_DIR}/noise"
 echo "    SoundFont: ${INSTALL_DIR}/TrafkSF2.sf2"
+echo "    Icon     : ${INSTALL_DIR}/Icon.png"
 echo "    Starter  : ${DESKTOP_FILE}"
