@@ -7,9 +7,8 @@
 ---
 >This Project was coded by AI with strict human vision controls!
 ---
-# TrafkVerseScreensaver
-A little C Program, that randomly generates forms that also make music. Not actually a screensaver, but sure does look like one!!
 ![IconLogo](Icon.png)
+A little C Program, that randomly generates forms that also make music. Not actually a screensaver, but sure does look like one!!
 
 ## How to use the program
 Download the Install.sh from latest Release of (even better) from the source code!
