@@ -1,4 +1,8 @@
 /*
+Copyright © 2026 TrafkHop Entertainment™
+All rights reserved.
+*/
+/*
  * RandomNoise  -  aus schwarzem/grauem Rauschen wachsen bunte Muster, Figuren und Musik.
  *
  *  - Rendering/Fenster/Audio:  SDL2 (Wayland bevorzugt, X11 Fallback; Audio PipeWire > Pulse > ALSA)

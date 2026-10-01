@@ -1,3 +1,7 @@
+/*
+Copyright © 2026 TrafkHop Entertainment™
+All rights reserved.
+*/
 // noise.c — random-noise pattern/music generator
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>

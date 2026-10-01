@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Copyright © 2026 TrafkHop Entertainment™
+# All rights reserved.
 # Install.sh – TrafkVerseScreensaver (DeepSeek/FinalV9) herunterladen, bauen und installieren
 set -euo pipefail
 

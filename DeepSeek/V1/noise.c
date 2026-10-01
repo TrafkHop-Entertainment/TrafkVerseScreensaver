@@ -1,3 +1,7 @@
+/*
+Copyright © 2026 TrafkHop Entertainment™
+All rights reserved.
+*/
 // noise.c  —  random-noise pattern/music generator
 // Build:   gcc -O2 -o noise noise.c -lSDL2 -lm
 // Needs:   SDL2, tsf.h (TinySoundFont) in the same folder, *.sf2 files next to binary.

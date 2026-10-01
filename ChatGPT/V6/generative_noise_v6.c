@@ -10,7 +10,10 @@
 #include <time.h>
 #include <unistd.h>
 #include <limits.h>
-
+/*
+Copyright © 2026 TrafkHop Entertainment™
+All rights reserved.
+*/
 /* Self-contained prototype: no SDL/FluidSynth headers required at build time.
    Runtime libraries are loaded dynamically. SDL2 uses the native Wayland backend.
 */

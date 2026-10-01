@@ -1,4 +1,8 @@
+> Copyright © 2026 TrafkHop Entertainment™
+> All rights reserved.
+---
 >This Project is Source Available, NOT Open Source!
+---
 >This Project was coded by AI with strict human vision controls!
 # TrafkVerseScreensaver
 ---

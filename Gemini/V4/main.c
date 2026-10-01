@@ -1,4 +1,8 @@
 /*
+Copyright © 2026 TrafkHop Entertainment™
+All rights reserved.
+*/
+/*
  * Random Noise Pattern Generator V4
  * Linux (Wayland/PulseAudio via SDL2 + TSF)
  * Kompilieren: gcc -O3 main.c -o random_noise -lSDL2 -lm
