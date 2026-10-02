@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install.sh – TrafkVerseScreensaver (DeepSeek/FinalV9) herunterladen, bauen und installieren
+# Install.sh – TrafkVerseScreensaver (NewestVersion) herunterladen, bauen und installieren
 set -euo pipefail
 
 # ---------------------------------------------------------------- Konfiguration
@@ -10,7 +10,7 @@ SCREENSAVER_REF="${SCREENSAVER_REF:-HEAD}"
 SF2_REF="${SF2_REF:-HEAD}"
 ICON_REF="${ICON_REF:-HEAD}"
 
-BASE_URL="https://raw.githubusercontent.com/TrafkHop-Entertainment/TrafkVerseScreensaver/${SCREENSAVER_REF}/DeepSeek/FinalV9"
+BASE_URL="https://raw.githubusercontent.com/TrafkHop-Entertainment/TrafkVerseScreensaver/${SCREENSAVER_REF}/NewestVersion"
 SF2_URL="https://raw.githubusercontent.com/TrafkHop-Entertainment/SourceHop-Audios/${SF2_REF}/TrafkSF2.sf2"
 
 INSTALL_DIR="${HOME}/.local/share/TrafkHopEntertainment/TrafkVerseScreensaver"
@@ -54,13 +54,13 @@ fi
 BUILD_DIR="$(mktemp -d)"
 trap 'rm -rf "$BUILD_DIR"' EXIT
 
-info "Lade noise.c und Makefile herunter ..."
-wget -q --show-progress -O "${BUILD_DIR}/noise.c"  "${BASE_URL}/noise.c"
-wget -q --show-progress -O "${BUILD_DIR}/Makefile" "${BASE_URL}/Makefile"
+info "Lade TrafkVerseScreensaver.c und Makefile herunter ..."
+wget -q --show-progress -O "${BUILD_DIR}/TrafkVerseScreensaver.c" "${BASE_URL}/TrafkVerseScreensaver.c"
+wget -q --show-progress -O "${BUILD_DIR}/Makefile"                "${BASE_URL}/Makefile"
 
 info "Baue Screensaver (das Makefile lädt tsf.h automatisch) ..."
 make -C "$BUILD_DIR"
-[ -x "${BUILD_DIR}/noise" ] || { err "Build fehlgeschlagen: 'noise' wurde nicht erzeugt."; exit 1; }
+[ -x "${BUILD_DIR}/TrafkVerseScreensaver" ] || { err "Build fehlgeschlagen: 'TrafkVerseScreensaver' wurde nicht erzeugt."; exit 1; }
 ok "Build erfolgreich."
 
 # ---------------------------------------------------------------- Installation
@@ -106,12 +106,12 @@ if [ "$(head -c 4 "${BUILD_DIR}/Icon.png" | tail -c 3)" != "PNG" ]; then
 fi
 
 # Läuft noch eine alte Instanz? (wird nicht beendet, nur gemeldet)
-if pgrep -x noise >/dev/null 2>&1; then
-    info "Hinweis: 'noise' läuft gerade. Die neue Version wird erst nach einem Neustart des Screensavers genutzt."
+if pgrep -x TrafkVerseScreensaver >/dev/null 2>&1; then
+    info "Hinweis: 'TrafkVerseScreensaver' läuft gerade. Die neue Version wird erst nach einem Neustart des Screensavers genutzt."
 fi
 
 # Dateien kopieren; bestehende werden überschrieben
-for f in noise TrafkSF2.sf2 Icon.png; do
+for f in TrafkVerseScreensaver TrafkSF2.sf2 Icon.png; do
     if [ -e "${INSTALL_DIR}/${f}" ] || [ -L "${INSTALL_DIR}/${f}" ]; then
         info "${f} existiert bereits, wird überschrieben."
     else
@@ -119,16 +119,16 @@ for f in noise TrafkSF2.sf2 Icon.png; do
     fi
 done
 
-# noise: erst unter temporärem Namen im Zielordner ablegen, dann per mv ersetzen.
+# TrafkVerseScreensaver: erst unter temporärem Namen im Zielordner ablegen, dann per mv ersetzen.
 # mv ist atomar und klappt auch, wenn die alte Datei gerade läuft ("Text file busy").
-install -m 755 "${BUILD_DIR}/noise" "${INSTALL_DIR}/.noise.new"
-mv -f "${INSTALL_DIR}/.noise.new" "${INSTALL_DIR}/noise"
+install -m 755 "${BUILD_DIR}/TrafkVerseScreensaver" "${INSTALL_DIR}/.TrafkVerseScreensaver.new"
+mv -f "${INSTALL_DIR}/.TrafkVerseScreensaver.new" "${INSTALL_DIR}/TrafkVerseScreensaver"
 
 install -m 644 "${BUILD_DIR}/TrafkSF2.sf2" "${INSTALL_DIR}/TrafkSF2.sf2"
 install -m 644 "${BUILD_DIR}/Icon.png"     "${INSTALL_DIR}/Icon.png"
 
 # Kontrolle: stimmen die installierten Dateien mit den frisch gebauten/geladenen überein?
-for f in noise TrafkSF2.sf2 Icon.png; do
+for f in TrafkVerseScreensaver TrafkSF2.sf2 Icon.png; do
     if ! cmp -s "${BUILD_DIR}/${f}" "${INSTALL_DIR}/${f}"; then
         err "${f} im Zielordner stimmt nicht mit der neuen Version überein!"
         exit 1
@@ -143,7 +143,7 @@ cat > "$DESKTOP_FILE" <<EOF
 [Desktop Entry]
 Type=Application
 Name=TrafkVerseScreensaver
-Exec=${INSTALL_DIR}/noise
+Exec=${INSTALL_DIR}/TrafkVerseScreensaver
 Path=${INSTALL_DIR}
 Icon=${INSTALL_DIR}/Icon.png
 Terminal=false
@@ -155,7 +155,7 @@ command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$
 
 # ---------------------------------------------------------------- Fertig
 ok "Installation abgeschlossen!"
-echo "    Programm : ${INSTALL_DIR}/noise"
+echo "    Programm : ${INSTALL_DIR}/TrafkVerseScreensaver"
 echo "    SoundFont: ${INSTALL_DIR}/TrafkSF2.sf2"
 echo "    Icon     : ${INSTALL_DIR}/Icon.png"
 echo "    Starter  : ${DESKTOP_FILE}"
