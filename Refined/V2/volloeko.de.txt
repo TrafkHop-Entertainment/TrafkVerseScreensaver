@@ -26,4 +26,13 @@ Alles in Allem ein sehr geiles upgrade!
 10. es gibt jetzt keine musterklassen oder erscheinungs % mehr oder? gut.
 
 11. ich hätt gern ein paar witzige optionen noch: erscheinungs/verschwinde dauer, notenwechsel speed multipliar (damit man, wenn man will, die töne schneller wechseln lassen kann. so 5x, dass das wie in der disco ist. z.b.), etc (vielleicht fällt dir noch was ein :) )
+
+12. ich würde die größe der muster erhöhen, da wegen der höheren auflösung alles ja kleiner ist. damit mein ich, dass die % der größe, also die größe nansich passen ja. aber zu oft sind sie zu klein. die ganz großen (da die max größe erhöhen plz) sollen sehr selten sein, aber die ganz kleinen sollten auch eher selten sein, wesentlich wesentlich häufiger als die ganz großen aber die mittleren, die mitte, sie ist nicht umsonst die mitte. joa. also hald die normalgröße was kommt bissl erhöhen, max größe minimal erhöhen, %e anpassen ein wenig. NE MAXIMAL GRÖẞE KANN BLEIBEN WO SIE IST..... einfach die normalgröße bissl die % hochpuschen, es sind schon, also die normalgröße würde ich fast schon eher klein betiteln.
+
+13. ich wollt nochmal fragen: für die musikinstrumente sind eh genug channels frei damit jedes auch abspielen kann? glaub ja schon aber fragen ist besser als nicht fragen. .............
+
+14. du musst noch den programmnamen anpassen im code... da steht noch noise auf der fensterleiste und so.
+
+15. ich wollt fragen: also die .desktop datei hat ein png als icon. wie machen wir das, dass das executalbe das auch hat? das .desktop ding hat hald ne verlinkung zur png datei. also in applaunchern sollte ein png sein. auf so taskleisten ist aber hald kein png bild und im execuatble auch nicht. ich schick dir einfach Mal den sh installer, da wird die desktop datei erstellt. wenn ich es nicht mitgeschickt hab, hab ichs vergessen. sag mir das dann bitte, dann schick ichs nach!
+
 so glaub das waren alle paranoiden kontrollfragen
