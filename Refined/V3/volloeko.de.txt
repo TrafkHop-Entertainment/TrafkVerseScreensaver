@@ -1,0 +1,19 @@
+weiter!
+
+UND NOCH DAS HIER (ja wieder ein block mit sau viel text wo die hälfte am ende eh nicht mehr stimmt):
+
+also mir ist ein wenig aufgefallen, dass es sich nicht mehr so gut anhört wie früher.
+
+Dann hab ichs gesehen: 9 muster auf einmal und das alles große.
+und die haben sich in 2 cluster aufgeteile. 6 bicken zusammen auf der rechten und 3 auf der linken.
+
+Früher war ein typischer wert von 5 - 7 Mustern gut und da waren meißt so 2-4 große und der rest sehr kleine, welche man dann nicht recht rausgehört hat.
+
+Ich hätt das gern wieder mehr so. ich schick daher wiedermal die ganz alte version mit, damit du gleich referenz wieder hast. das neue ist natürlich in allem anderen besser, aber anhören sollte es sich hald auch gut.
+
+ok also im alten da kamen auch gut und gerne 10 muster auf einmal. aber da waren hald fast alle recht klein und nur so 1-3 groß.
+übernimm also eher die größenverteilung vom alten haar genau. mit der hört sich das sicher wieder prächtig an.
+
+
+
+und das noise ding würde ich von 1.35 auf 1.65 nochmal erhöhen. dann sollte es wirklich passen passen.

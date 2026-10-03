@@ -19,6 +19,13 @@ ICON_URL="https://raw.githubusercontent.com/TrafkHop-Entertainment/TrafkVerseScr
 DESKTOP_DIR="${HOME}/.local/share/applications"
 DESKTOP_FILE="${DESKTOP_DIR}/TrafkVerseScreensaver.desktop"
 
+# Theme icon name used in the .desktop file (and for icon-theme lookups by
+# docks/taskbars). Icon.png also gets installed under this name into the
+# user's hicolor icon theme — see the ".desktop-Datei"/"Icon-Theme" section
+# below for why an absolute path alone isn't enough for every consumer.
+ICON_NAME="TrafkVerseScreensaver"
+ICON_THEME_DIR="${HOME}/.local/share/icons/hicolor/256x256/apps"
+
 # ---------------------------------------------------------------- Hilfsfunktionen
 info() { printf '\033[1;34m[*]\033[0m %s\n' "$*"; }
 ok()   { printf '\033[1;32m[✓]\033[0m %s\n' "$*"; }
@@ -136,6 +143,20 @@ for f in TrafkVerseScreensaver TrafkSF2.sf2 Icon.png; do
 done
 ok "Alle Dateien installiert und verifiziert."
 
+# ---------------------------------------------------------------- Icon-Theme
+# Programme, die Icons ueber ein Icon-Theme aufloesen (gtk_icon_theme_has_icon
+# & Co. - Taskbars, Docks, App-Grids), suchen nach einem NAMEN wie
+# "TrafkVerseScreensaver", nicht nach dem obigen absoluten Pfad in
+# INSTALL_DIR. "hicolor" ist das universelle Fallback-Theme, das jede
+# konforme Implementierung immer mitdurchsucht, egal welches Theme sonst
+# aktiv ist - daher landet die Datei dort, unter dem Namen, nicht der
+# ICON_NAME-Variable als Dateiname mit Endung.
+info "Installiere Icon ins Icon-Theme (hicolor) ..."
+mkdir -p "$ICON_THEME_DIR"
+install -m 644 "${BUILD_DIR}/Icon.png" "${ICON_THEME_DIR}/${ICON_NAME}.png"
+command -v gtk-update-icon-cache >/dev/null 2>&1 && \
+    gtk-update-icon-cache -q -t -f "${HOME}/.local/share/icons/hicolor" 2>/dev/null || true
+
 # ---------------------------------------------------------------- .desktop-Datei
 [ -e "$DESKTOP_FILE" ] && info ".desktop-Datei existiert bereits, wird überschrieben." || info "Erstelle .desktop-Datei ..."
 mkdir -p "$DESKTOP_DIR"
@@ -145,7 +166,8 @@ Type=Application
 Name=TrafkVerseScreensaver
 Exec=${INSTALL_DIR}/TrafkVerseScreensaver
 Path=${INSTALL_DIR}
-Icon=${INSTALL_DIR}/Icon.png
+Icon=${ICON_NAME}
+StartupWMClass=${ICON_NAME}
 Terminal=false
 Categories=Game;
 EOF
@@ -158,4 +180,5 @@ ok "Installation abgeschlossen!"
 echo "    Programm : ${INSTALL_DIR}/TrafkVerseScreensaver"
 echo "    SoundFont: ${INSTALL_DIR}/TrafkSF2.sf2"
 echo "    Icon     : ${INSTALL_DIR}/Icon.png"
+echo "    Icon-Theme: ${ICON_THEME_DIR}/${ICON_NAME}.png"
 echo "    Starter  : ${DESKTOP_FILE}"

@@ -23,6 +23,11 @@ who specified the exact requirements and reviewed the result.
 #define TSF_IMPLEMENTATION
 #include "tsf.h"
 
+#define STBI_ONLY_PNG
+#define STBI_NO_LINEAR
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 int BufW = 640;
 int BufH = 360;
 #define MaxColors 256
@@ -58,9 +63,12 @@ static int   GOptColors = 0;      // 0 = random
 static int   GOptSilent = 1;
 static float GOptWobble = 1.0f;
 static float GOptWander = 1.0f;
-static float GOptBlend  = 1.0f;
+static float GOptBlend  = 1.35f;
 static int   GOptPixelsize = 0;   // 0 = auto (resolution-adaptive), 1..6 = forced logical-pixel size
 static float GOptAudioreact = 1.0f; // 0..2, strength of motion->sound coupling (pitch/volume)
+static float GOptZoom = 1.0f;       // 1.0 = no zoom, >1 crops+magnifies the buffer at blit time
+static float GOptFadeMul = 1.0f;    // scales appear/disappear (fade in/out) duration
+static float GOptNoteSpeedMul = 1.0f; // >1 = faster note changes ("disco" mode)
 
 // ------------------------- RNG -------------------------
 static uint32_t RngState;
@@ -1121,18 +1129,22 @@ static void SpawnEntity(void) {
             E->Angle = Frange(0.f, 6.2831853f);
             E->Spin  = Frange(-0.9f, 0.9f);
 
-            float U = Frand();
-            U = powf(U, 2.5f);
+            // Triangular-ish: average two rolls so both extremes are rare and
+            // "normal" sizes dominate, then a mild upward nudge since plain
+            // "normal" was landing on the small side. Max stays exactly the
+            // same (U still maxes out at 1.0).
+            float U = (Frand() + Frand()) * 0.5f;
+            U = powf(U, 0.85f);
             E->SizeBase = BufH * (0.02f + U * 0.58f);
 
             E->Size = E->SizeBase;
 
-            // size pulse: extremes much rarer now (3 / 20 / 74 / 3)
+            // size pulse: strong pulsing is rare (2 / 10 / 86 / 2)
             int Pr = (int)(Xr() % 100);
-            if (Pr < 3)       E->SizePulse = Frange(0.30f, 0.60f);
-            else if (Pr < 23) E->SizePulse = Frange(0.08f, 0.20f);
-            else if (Pr < 97) E->SizePulse = Frange(0.00f, 0.02f);
-            else              E->SizePulse = Frange(0.00f, 0.80f);
+            if (Pr < 2)       E->SizePulse = Frange(0.22f, 0.45f);
+            else if (Pr < 12) E->SizePulse = Frange(0.05f, 0.14f);
+            else if (Pr < 98) E->SizePulse = Frange(0.00f, 0.015f);
+            else              E->SizePulse = Frange(0.00f, 0.45f);
 
             E->SizePulseT = Frange(0.f, 6.28f);
             E->Color        = 1 + (Xr() % NColors);
@@ -1160,21 +1172,21 @@ static void SpawnEntity(void) {
                 E->AnimF2Vel = 0.0f;
             }
 
-            // ---- wander: ~45% of patterns wander, mostly gently ----
-            if (Frand() < 0.45f) {
+            // ---- wander: ~65% of patterns wander, mostly gently ----
+            if (Frand() < 0.65f) {
                 E->WanderOn = 1;
                 float Ar = Fsmall();
-                E->Accel     = (3.f + Ar * 18.f) * GOptWander;
-                E->MaxSpeed = (5.f + Ar * 30.f) * GOptWander;
+                E->Accel     = (6.f + Ar * 30.f) * GOptWander;
+                E->MaxSpeed = (10.f + Ar * 55.f) * GOptWander;
             } else {
                 E->WanderOn = 0;
                 E->Accel     = 0.f;
                 E->MaxSpeed = 0.f;
             }
 
-            E->InDur   = Frange(1.5f, 15.0f);
+            E->InDur   = Frange(1.5f, 15.0f) * GOptFadeMul;
             E->HoldDur = Frange(8.0f, 45.0f);
-            E->OutDur  = Frange(1.5f, 8.0f);
+            E->OutDur  = Frange(1.5f, 8.0f) * GOptFadeMul;
             E->Phase    = 0;
             E->Life     = 0.f;
             E->Presence = 0.f;
@@ -1190,7 +1202,7 @@ static void SpawnEntity(void) {
             if (Frand() < 0.55f) b *= 0.3f;
             E->Blend = b * 0.85f * GOptBlend;
 
-            E->RetrigTimer = Frange(2.5f, 5.5f);
+            E->RetrigTimer = Frange(2.5f, 5.5f) / GOptNoteSpeedMul;
             E->Thickness    = Rrange(0, 2);
             E->WillMorph   = (Xr() % 100) < 30;
             E->NotePlaying = 0;
@@ -1306,10 +1318,10 @@ static void UpdateEntities(float Dt) {
                 // If size didn't already set a pitch direction, sometimes let
                 // the entity's current vertical travel direction nudge it
                 // instead: moving up biases the next note higher, down lower.
-                if (GOptAudioreact > 0.0f && Bias == 0 && (Xr() % 100) < (int)(25 * GOptAudioreact)) {
+                if (GOptAudioreact > 0.0f && Bias == 0 && (Xr() % 100) < (int)(35 * GOptAudioreact)) {
                     float VyNorm = -E->Vy / 45.0f;
-                    if (VyNorm > 0.5f) Bias = 1;
-                    else if (VyNorm < -0.5f) Bias = -1;
+                    if (VyNorm > 0.5f) Bias = 2;
+                    else if (VyNorm < -0.5f) Bias = -2;
                 }
                 E->Key = PickNoteBiased(Bias);
                 float PulseAct = E->SizePulse * fabsf(sinf(E->SizePulseT * 0.7f));
@@ -1321,11 +1333,11 @@ static void UpdateEntities(float Dt) {
                 // the shape is currently pulsing, so a pulsing shape's next
                 // note lands a bit louder. Set once here at the note change;
                 // untouched until the following retrigger.
-                float VelMul = Frange(0.85f, 1.15f) + PulseAct * 0.1f * GOptAudioreact;
+                float VelMul = Frange(0.85f, 1.15f) + PulseAct * 0.16f * GOptAudioreact;
                 tsf_note_on(Synth, ColorPreset[E->Color - 1], E->Key,
                             E->Velocity * VelMul);
                 float BaseInt = Frange(1.8f, 4.0f);
-                E->RetrigTimer = BaseInt / (1.0f + 1.8f * Activity);
+                E->RetrigTimer = BaseInt / (1.0f + 1.8f * Activity) / GOptNoteSpeedMul;
                 if (E->RetrigTimer < 0.5f) E->RetrigTimer = 0.5f;
             }
             if (E->Life >= E->HoldDur) { E->Phase = 2; E->Life = 0.0f; }
@@ -1359,21 +1371,21 @@ static void UpdateEntities(float Dt) {
                         E->AnimA1 = E->AnimA2 = 0.0f;
                         E->AnimF1Vel = E->AnimF2Vel = 0.0f;
                     }
-                    if (Frand() < 0.45f) {
+                    if (Frand() < 0.65f) {
                         E->WanderOn = 1;
                         float Ar = Fsmall();
-                        E->Accel     = (3.f + Ar * 18.f) * GOptWander;
-                        E->MaxSpeed = (5.f + Ar * 30.f) * GOptWander;
+                        E->Accel     = (6.f + Ar * 30.f) * GOptWander;
+                        E->MaxSpeed = (10.f + Ar * 55.f) * GOptWander;
                     } else {
                         E->WanderOn = 0;
                         E->Accel     = 0.f;
                         E->MaxSpeed = 0.f;
                     }
-                    E->InDur   = Frange(1.5f, 15.0f);
+                    E->InDur   = Frange(1.5f, 15.0f) * GOptFadeMul;
                     E->HoldDur = Frange(8.0f, 45.0f);
-                    E->OutDur  = Frange(1.5f, 8.0f);
+                    E->OutDur  = Frange(1.5f, 8.0f) * GOptFadeMul;
                     E->Thickness   = Rrange(0, 2);
-                    E->RetrigTimer = Frange(2.5f, 5.5f);
+                    E->RetrigTimer = Frange(2.5f, 5.5f) / GOptNoteSpeedMul;
                     E->WillMorph  = (Xr() % 100) < 30;
                     float b = Frand();
                     if (Frand() < 0.55f) b *= 0.3f;
@@ -1521,6 +1533,28 @@ static int FindSf2(void) {
     snprintf(Sf2Path, sizeof(Sf2Path), "%.511s/%.255s", ExeDir, Cand[Pick]);
     return 1;
 }
+// Loads Icon.png from next to the executable and sets it as the window's
+// icon (titlebar/taskbar/alt-tab). Purely cosmetic — any failure here (file
+// missing, bad PNG, old SDL without SurfaceWithFormatFrom) is silently
+// skipped rather than stopping the program.
+static void SetWindowIconFromExeDir(SDL_Window *Win) {
+    GetExeDir();
+    char IconPath[1040];
+    snprintf(IconPath, sizeof(IconPath), "%.511s/Icon.png", ExeDir);
+
+    int Iw = 0, Ih = 0, Ich = 0;
+    unsigned char *Pixels = stbi_load(IconPath, &Iw, &Ih, &Ich, 4);
+    if (!Pixels) return;
+
+    SDL_Surface *Surf = SDL_CreateRGBSurfaceWithFormatFrom(
+        Pixels, Iw, Ih, 32, Iw * 4, SDL_PIXELFORMAT_RGBA32);
+    if (Surf) {
+        SDL_SetWindowIcon(Win, Surf);
+        SDL_FreeSurface(Surf);
+    }
+    stbi_image_free(Pixels);
+}
+
 static void AssignPresets(void) {
     if (!Synth) return;
     int Pc = tsf_get_presetcount(Synth);
@@ -1641,14 +1675,14 @@ static void OptionsMenu(void) {
         if (V >= 0.0f && V <= 3.0f) GOptWobble = V;
     }
 
-    printf("  Wander multiplier  [0.0-3.0, 1.0]: ");
+    printf("  Wander multiplier  [0.0-6.0, 1.0]: ");
     fflush(stdout);
     if (fgets(Buf, sizeof(Buf), stdin)) {
         float V = atof(Buf);
-        if (V >= 0.0f && V <= 3.0f) GOptWander = V;
+        if (V >= 0.0f && V <= 6.0f) GOptWander = V;
     }
 
-    printf("  Edge-blend multiplier [0.0-3.0, 1.0]: ");
+    printf("  Edge-blend / dithering multiplier [0.0-3.0, 1.35]: ");
     fflush(stdout);
     if (fgets(Buf, sizeof(Buf), stdin)) {
         float V = atof(Buf);
@@ -1667,6 +1701,27 @@ static void OptionsMenu(void) {
     if (fgets(Buf, sizeof(Buf), stdin)) {
         float V = atof(Buf);
         if (V >= 0.0f && V <= 2.0f) GOptAudioreact = V;
+    }
+
+    printf("  Zoom [1.0-4.0, 1.0 = off]: ");
+    fflush(stdout);
+    if (fgets(Buf, sizeof(Buf), stdin)) {
+        float V = atof(Buf);
+        if (V >= 1.0f && V <= 4.0f) GOptZoom = V;
+    }
+
+    printf("  Appear/disappear duration multiplier [0.2-4.0, 1.0]: ");
+    fflush(stdout);
+    if (fgets(Buf, sizeof(Buf), stdin)) {
+        float V = atof(Buf);
+        if (V >= 0.2f && V <= 4.0f) GOptFadeMul = V;
+    }
+
+    printf("  Note-change speed multiplier [0.2-5.0, 1.0 = normal, 5.0 = disco]: ");
+    fflush(stdout);
+    if (fgets(Buf, sizeof(Buf), stdin)) {
+        float V = atof(Buf);
+        if (V >= 0.2f && V <= 5.0f) GOptNoteSpeedMul = V;
     }
 
     printf("\n  Starting...\n\n");
@@ -1706,17 +1761,24 @@ int main(int Argc, char **Argv) {
     GenColors();
     AssignPresets();
 
+    // Sets the window's WM_CLASS (X11) / app_id (Wayland) explicitly, so
+    // window-list taskbars/docks that match windows against a .desktop
+    // file's Name or StartupWMClass get a stable, predictable string
+    // instead of whatever SDL would otherwise derive from the binary name.
+    SDL_SetHint(SDL_HINT_APP_NAME, "TrafkVerseScreensaver");
+
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
         fprintf(stderr, "SDL_Init: %s\n", SDL_GetError());
         return 1;
     }
 
     SDL_Window *Win = SDL_CreateWindow(
-        "Noise",
+        "TrafkVerseScreensaver",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         960, 540,
         SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI);
     if (!Win) { fprintf(stderr, "CreateWindow: %s\n", SDL_GetError()); return 1; }
+    SetWindowIconFromExeDir(Win);
 
     SDL_Renderer *Ren = SDL_CreateRenderer(
         Win, -1,
@@ -1724,7 +1786,7 @@ int main(int Argc, char **Argv) {
     if (!Ren) Ren = SDL_CreateRenderer(Win, -1, SDL_RENDERER_SOFTWARE);
     if (!Ren) { fprintf(stderr, "CreateRenderer: %s\n", SDL_GetError()); return 1; }
 
-    // BUF_W/BUF_H are derived from the real renderer output resolution;
+    // BufW/BufH are derived from the real renderer output resolution;
     // see compute_buf_size() above.
     ComputeBufSize(Ren, &BufW, &BufH);
     SDL_RenderSetLogicalSize(Ren, BufW, BufH);
@@ -1836,7 +1898,16 @@ int main(int Argc, char **Argv) {
 
         SDL_UpdateTexture(Tex, NULL, Pixbuf, BufW * 4);
         SDL_RenderClear(Ren);
-        SDL_RenderCopy(Ren, Tex, NULL, NULL);
+        if (GOptZoom > 1.0f) {
+            int Zw = (int)(BufW / GOptZoom);
+            int Zh = (int)(BufH / GOptZoom);
+            if (Zw < 8) Zw = 8;
+            if (Zh < 8) Zh = 8;
+            SDL_Rect Src = { (BufW - Zw) / 2, (BufH - Zh) / 2, Zw, Zh };
+            SDL_RenderCopy(Ren, Tex, &Src, NULL);
+        } else {
+            SDL_RenderCopy(Ren, Tex, NULL, NULL);
+        }
         SDL_RenderPresent(Ren);
     }
 
