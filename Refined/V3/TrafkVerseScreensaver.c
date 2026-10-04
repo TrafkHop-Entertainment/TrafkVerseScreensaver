@@ -63,7 +63,7 @@ static int   GOptColors = 0;      // 0 = random
 static int   GOptSilent = 1;
 static float GOptWobble = 1.0f;
 static float GOptWander = 1.0f;
-static float GOptBlend  = 1.35f;
+static float GOptBlend  = 1.65f;
 static int   GOptPixelsize = 0;   // 0 = auto (resolution-adaptive), 1..6 = forced logical-pixel size
 static float GOptAudioreact = 1.0f; // 0..2, strength of motion->sound coupling (pitch/volume)
 static float GOptZoom = 1.0f;       // 1.0 = no zoom, >1 crops+magnifies the buffer at blit time
@@ -1129,12 +1129,10 @@ static void SpawnEntity(void) {
             E->Angle = Frange(0.f, 6.2831853f);
             E->Spin  = Frange(-0.9f, 0.9f);
 
-            // Triangular-ish: average two rolls so both extremes are rare and
-            // "normal" sizes dominate, then a mild upward nudge since plain
-            // "normal" was landing on the small side. Max stays exactly the
-            // same (U still maxes out at 1.0).
-            float U = (Frand() + Frand()) * 0.5f;
-            U = powf(U, 0.85f);
+            // Most entities small, large ones rare: the exponent pulls U
+            // toward 0 before it's mapped onto the size range.
+            float U = Frand();
+            U = powf(U, 2.5f);
             E->SizeBase = BufH * (0.02f + U * 0.58f);
 
             E->Size = E->SizeBase;
@@ -1682,7 +1680,7 @@ static void OptionsMenu(void) {
         if (V >= 0.0f && V <= 6.0f) GOptWander = V;
     }
 
-    printf("  Edge-blend / dithering multiplier [0.0-3.0, 1.35]: ");
+    printf("  Edge-blend / dithering multiplier [0.0-3.0, 1.65]: ");
     fflush(stdout);
     if (fgets(Buf, sizeof(Buf), stdin)) {
         float V = atof(Buf);
@@ -1761,10 +1759,15 @@ int main(int Argc, char **Argv) {
     GenColors();
     AssignPresets();
 
-    // Sets the window's WM_CLASS (X11) / app_id (Wayland) explicitly, so
+    // Sets the window's app_id (Wayland) / WM_CLASS (X11) explicitly, so
     // window-list taskbars/docks that match windows against a .desktop
     // file's Name or StartupWMClass get a stable, predictable string
     // instead of whatever SDL would otherwise derive from the binary name.
+    // SDL2's Wayland driver reads this from an environment variable, not
+    // from SDL_HINT_APP_NAME (that hint controls unrelated things, like the
+    // PulseAudio stream name) — both must be set before SDL_Init.
+    setenv("SDL_VIDEO_WAYLAND_WMCLASS", "TrafkVerseScreensaver", 1);
+    setenv("SDL_VIDEO_X11_WMCLASS", "TrafkVerseScreensaver", 1);
     SDL_SetHint(SDL_HINT_APP_NAME, "TrafkVerseScreensaver");
 
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
