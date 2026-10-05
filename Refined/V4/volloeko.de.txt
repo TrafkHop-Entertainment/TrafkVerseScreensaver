@@ -1,0 +1,6 @@
+So hab hier ein Programm, welches man auf github auffinden und installieren kann.
+
+
+ich will in der c datei noch ein wenig die lizenz und copyright und urheberrecht und so einbauen.
+
+WIe mach ich das am besten? ich will jetzt das programm nicht übelst verschlüsseln – source code ist ja einsehbar.

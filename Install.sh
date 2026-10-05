@@ -9,12 +9,14 @@ set -euo pipefail
 SCREENSAVER_REF="${SCREENSAVER_REF:-HEAD}"
 SF2_REF="${SF2_REF:-HEAD}"
 ICON_REF="${ICON_REF:-HEAD}"
+LICENSE_REF="${LICENSE_REF:-HEAD}"
 
 BASE_URL="https://raw.githubusercontent.com/TrafkHop-Entertainment/TrafkVerseScreensaver/${SCREENSAVER_REF}/NewestVersion"
 SF2_URL="https://raw.githubusercontent.com/TrafkHop-Entertainment/SourceHop-Audios/${SF2_REF}/TrafkSF2.sf2"
 
 INSTALL_DIR="${HOME}/.local/share/TrafkHopEntertainment/TrafkVerseScreensaver"
 ICON_URL="https://raw.githubusercontent.com/TrafkHop-Entertainment/TrafkVerseScreensaver/${ICON_REF}/Icon.png"
+LICENSE_URL="https://raw.githubusercontent.com/TrafkHop-Entertainment/TrafkVerseScreensaver/${LICENSE_REF}/LICENSE"
 
 DESKTOP_DIR="${HOME}/.local/share/applications"
 DESKTOP_FILE="${DESKTOP_DIR}/TrafkVerseScreensaver.desktop"
@@ -112,13 +114,22 @@ if [ "$(head -c 4 "${BUILD_DIR}/Icon.png" | tail -c 3)" != "PNG" ]; then
     exit 1
 fi
 
+info "Lade LICENSE herunter ..."
+wget -q --show-progress -O "${BUILD_DIR}/LICENSE" "$LICENSE_URL"
+# Plain text hat kein Magic-Byte wie PNG/RIFF; ein einfacher Nicht-leer-Check
+# reicht hier, um zumindest einen 404-als-leere-Datei-Fall abzufangen.
+if [ ! -s "${BUILD_DIR}/LICENSE" ]; then
+    err "LICENSE ist leer. Prüfe die URL: ${LICENSE_URL}"
+    exit 1
+fi
+
 # Läuft noch eine alte Instanz? (wird nicht beendet, nur gemeldet)
 if pgrep -x TrafkVerseScreensaver >/dev/null 2>&1; then
     info "Hinweis: 'TrafkVerseScreensaver' läuft gerade. Die neue Version wird erst nach einem Neustart des Screensavers genutzt."
 fi
 
 # Dateien kopieren; bestehende werden überschrieben
-for f in TrafkVerseScreensaver TrafkSF2.sf2 Icon.png; do
+for f in TrafkVerseScreensaver TrafkSF2.sf2 Icon.png LICENSE; do
     if [ -e "${INSTALL_DIR}/${f}" ] || [ -L "${INSTALL_DIR}/${f}" ]; then
         info "${f} existiert bereits, wird überschrieben."
     else
@@ -133,9 +144,10 @@ mv -f "${INSTALL_DIR}/.TrafkVerseScreensaver.new" "${INSTALL_DIR}/TrafkVerseScre
 
 install -m 644 "${BUILD_DIR}/TrafkSF2.sf2" "${INSTALL_DIR}/TrafkSF2.sf2"
 install -m 644 "${BUILD_DIR}/Icon.png"     "${INSTALL_DIR}/Icon.png"
+install -m 644 "${BUILD_DIR}/LICENSE"      "${INSTALL_DIR}/LICENSE"
 
 # Kontrolle: stimmen die installierten Dateien mit den frisch gebauten/geladenen überein?
-for f in TrafkVerseScreensaver TrafkSF2.sf2 Icon.png; do
+for f in TrafkVerseScreensaver TrafkSF2.sf2 Icon.png LICENSE; do
     if ! cmp -s "${BUILD_DIR}/${f}" "${INSTALL_DIR}/${f}"; then
         err "${f} im Zielordner stimmt nicht mit der neuen Version überein!"
         exit 1
@@ -209,6 +221,7 @@ ok "Installation abgeschlossen!"
 echo "    Programm : ${INSTALL_DIR}/TrafkVerseScreensaver"
 echo "    SoundFont: ${INSTALL_DIR}/TrafkSF2.sf2"
 echo "    Icon     : ${INSTALL_DIR}/Icon.png"
+echo "    LICENSE  : ${INSTALL_DIR}/LICENSE"
 echo "    Icon-Theme: ${ICON_THEME_DIR}/${ICON_NAME}.png"
 echo "    Starter  : ${DESKTOP_FILE}"
 [ -n "${DESKTOP_SHORTCUT:-}" ] && [ -e "${DESKTOP_SHORTCUT:-}" ] && echo "    Desktop  : ${DESKTOP_SHORTCUT}"
