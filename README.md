@@ -28,8 +28,8 @@ After all 4 AIs have "finished":
    No noise, loud sounds, basic shapes, big shapes, not good, its just not good.
 
 ## How it was created
-HoppiTex was watching a YT video of https://www.youtube.com/@TheMorpheusTutorials where he said something about randomness.
-Then he thought of the phenominon where when you close your eyes, noise build up and it creates forms that float around.
+HoppiTex was watching a YT video of https://www.youtube.com/@TheMorpheusTutorials where he said something about randomness (edit: MorphDemo was the video, the first where he did the test with MorphDemo).
+Then he (HoppiTex) thought of the phenominon where when you close your eyes, noise build up and it creates forms that float around.
 
 To he wrote a Prompt and gave it to gemini, deepseek and claude.
 Gemini sucked ass, claude did not have enough tokens and deepseek cleared the task with ease. And after 8 Versions and a 9. tweak by Hopx himself it was done.

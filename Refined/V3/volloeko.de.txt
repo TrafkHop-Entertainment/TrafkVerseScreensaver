@@ -1,3 +1,0 @@
-weiter!
-(also nochmal zur klaren Klarstellung: die Sachen sind ALLE optional und sollen das standardverhalten 0 Verändern! Also das weißt du eh schon aber ich sagt wie immer noch 5 Mal....)
-Aja deine God-Mode-Anzeige Idee wäre auch ne gute sache! also ne leite oben die anzeigt: fps, musteranzahl, audio count, etc.
