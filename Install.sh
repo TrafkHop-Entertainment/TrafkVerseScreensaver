@@ -158,10 +158,7 @@ command -v gtk-update-icon-cache >/dev/null 2>&1 && \
     gtk-update-icon-cache -q -t -f "${HOME}/.local/share/icons/hicolor" 2>/dev/null || true
 
 # ---------------------------------------------------------------- .desktop-Datei
-[ -e "$DESKTOP_FILE" ] && info ".desktop-Datei existiert bereits, wird überschrieben." || info "Erstelle .desktop-Datei ..."
-mkdir -p "$DESKTOP_DIR"
-cat > "$DESKTOP_FILE" <<EOF
-[Desktop Entry]
+DESKTOP_ENTRY_CONTENT="[Desktop Entry]
 Type=Application
 Name=TrafkVerseScreensaver
 Exec=${INSTALL_DIR}/TrafkVerseScreensaver
@@ -169,11 +166,43 @@ Path=${INSTALL_DIR}
 Icon=${ICON_NAME}
 StartupWMClass=${ICON_NAME}
 Terminal=false
-Categories=Game;
-EOF
+Categories=Game;"
+
+[ -e "$DESKTOP_FILE" ] && info ".desktop-Datei existiert bereits, wird überschrieben." || info "Erstelle .desktop-Datei ..."
+mkdir -p "$DESKTOP_DIR"
+printf '%s\n' "$DESKTOP_ENTRY_CONTENT" > "$DESKTOP_FILE"
 chmod 644 "$DESKTOP_FILE"
 
 command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$DESKTOP_DIR" 2>/dev/null || true
+
+# ---------------------------------------------------------------- Desktop-Verknüpfung
+# Nur wenn der Nutzer ueberhaupt einen Desktop-Ordner hat. xdg-user-dir ist
+# der korrekte, lokalisierungssichere Weg (der Ordner heisst nicht ueberall
+# "Desktop", z.B. auf Deutsch "Schreibtisch"); HOME/Desktop ist der Fallback,
+# falls xdg-user-dir fehlt.
+if command -v xdg-user-dir >/dev/null 2>&1; then
+    USER_DESKTOP_DIR="$(xdg-user-dir DESKTOP 2>/dev/null || true)"
+else
+    USER_DESKTOP_DIR="${HOME}/Desktop"
+fi
+
+if [ -n "$USER_DESKTOP_DIR" ] && [ -d "$USER_DESKTOP_DIR" ]; then
+    DESKTOP_SHORTCUT="${USER_DESKTOP_DIR}/TrafkVerseScreensaver.desktop"
+    info "Erstelle Desktop-Verknüpfung (${DESKTOP_SHORTCUT}) ..."
+    printf '%s\n' "$DESKTOP_ENTRY_CONTENT" > "$DESKTOP_SHORTCUT"
+    # Ausfuehrbar machen: auf den meisten Desktops (inkl. Nautilus) sonst
+    # nur eine inerte Textdatei statt eines klickbaren Launchers.
+    chmod 755 "$DESKTOP_SHORTCUT"
+    # Nautilus zeigt ohne diesen Schritt nur ein Platzhalter-Icon mit
+    # Warndreieck an ("nicht vertrauenswuerdig") statt Icon.png; entspricht
+    # dem Klick auf "Starten erlauben" im Dateimanager. Auf Desktops ohne
+    # Nautilus (KDE, XFCE, ...) ist das ein wirkungsloser No-Op.
+    command -v gio >/dev/null 2>&1 && \
+        gio set "$DESKTOP_SHORTCUT" "metadata::trusted" yes 2>/dev/null || true
+    ok "Desktop-Verknüpfung erstellt."
+else
+    info "Kein Desktop-Ordner gefunden, überspringe Desktop-Verknüpfung."
+fi
 
 # ---------------------------------------------------------------- Fertig
 ok "Installation abgeschlossen!"
@@ -182,3 +211,4 @@ echo "    SoundFont: ${INSTALL_DIR}/TrafkSF2.sf2"
 echo "    Icon     : ${INSTALL_DIR}/Icon.png"
 echo "    Icon-Theme: ${ICON_THEME_DIR}/${ICON_NAME}.png"
 echo "    Starter  : ${DESKTOP_FILE}"
+[ -n "${DESKTOP_SHORTCUT:-}" ] && [ -e "${DESKTOP_SHORTCUT:-}" ] && echo "    Desktop  : ${DESKTOP_SHORTCUT}"
