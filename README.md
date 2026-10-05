@@ -8,12 +8,14 @@
 >This Project was coded by AI with strict human vision controls!
 ---
 ![IconLogo](Icon.png)
+*Only on Linux*
 A little C Program, that randomly generates forms that also make music. Not actually a screensaver, but sure does look like one!!
 
 ## How to use the program
 Download the Install.sh from latest Release of (even better) from the source code!
 Run the **Install.sh** file.
 Start the program from your Launcher or from the program filepath provided by the installer.
+**The Program runs on any linux system!**
 
 ## Ranking
 After all 4 AIs have "finished":
