@@ -1,17 +1,20 @@
 #!/usr/bin/env bash
-# Install.sh – TrafkVerseScreensaver (NewestVersion) herunterladen, bauen und installieren
+# Install.sh – TrafkVerseScreensaver (NewestVersion, vorkompiliert) herunterladen und installieren
 set -euo pipefail
 
 # ---------------------------------------------------------------- Konfiguration
 # Welcher Stand wird geholt? "HEAD" = immer die neueste Version des Standard-Branches.
 # Zum Festpinnen auf einen Stand statt HEAD einen Commit-Hash eintragen
 # (oder beim Aufruf: SCREENSAVER_REF=<hash> ./Install.sh)
+# SCREENSAVER_REF steuert jetzt den Ref für die vorkompilierte Executable
+# (nicht mehr für Quellcode+Makefile – das Bauen passiert nicht mehr hier).
 SCREENSAVER_REF="${SCREENSAVER_REF:-HEAD}"
 SF2_REF="${SF2_REF:-HEAD}"
 ICON_REF="${ICON_REF:-HEAD}"
 LICENSE_REF="${LICENSE_REF:-HEAD}"
 
 BASE_URL="https://raw.githubusercontent.com/TrafkHop-Entertainment/TrafkVerseScreensaver/${SCREENSAVER_REF}/NewestVersion"
+BINARY_URL="${BASE_URL}/TrafkVerseScreensaver"
 SF2_URL="https://raw.githubusercontent.com/TrafkHop-Entertainment/SourceHop-Audios/${SF2_REF}/TrafkSF2.sf2"
 
 INSTALL_DIR="${HOME}/.local/share/TrafkHopEntertainment/TrafkVerseScreensaver"
@@ -38,39 +41,39 @@ need() {
 }
 
 # ---------------------------------------------------------------- Abhängigkeiten prüfen
+# Kein Compiler/Build-Werkzeug mehr nötig – es wird nur noch die fertige
+# Executable heruntergeladen. gcc/make/pkg-config/SDL2-dev bleiben Sache des
+# Makefiles, das nur noch für den eigenen, lokalen Build gedacht ist.
 MISSING=0
 need wget
-need make
-need gcc
-if command -v pkg-config >/dev/null 2>&1; then
-    pkg-config --exists sdl2 || { err "SDL2-Entwicklungsdateien fehlen."; MISSING=1; }
-else
-    err "pkg-config fehlt (wird zur Prüfung von SDL2 benötigt)."; MISSING=1
-fi
-
 if [ "$MISSING" -ne 0 ]; then
     cat >&2 <<'EOF'
 
 Benötigte Pakete installieren, z. B.:
-  Debian/Ubuntu/Mint : sudo apt install build-essential wget pkg-config libsdl2-dev
-  Fedora             : sudo dnf install gcc make wget pkgconf-pkg-config SDL2-devel
-  Arch/Manjaro       : sudo pacman -S base-devel wget sdl2
+  Debian/Ubuntu/Mint : sudo apt install wget
+  Fedora             : sudo dnf install wget
+  Arch/Manjaro       : sudo pacman -S wget
 EOF
     exit 1
 fi
 
-# ---------------------------------------------------------------- Build in temporärem Ordner
+# ---------------------------------------------------------------- Download in temporärem Ordner
 BUILD_DIR="$(mktemp -d)"
 trap 'rm -rf "$BUILD_DIR"' EXIT
 
-info "Lade TrafkVerseScreensaver.c und Makefile herunter ..."
-wget -q --show-progress -O "${BUILD_DIR}/TrafkVerseScreensaver.c" "${BASE_URL}/TrafkVerseScreensaver.c"
-wget -q --show-progress -O "${BUILD_DIR}/Makefile"                "${BASE_URL}/Makefile"
+info "Lade TrafkVerseScreensaver (vorkompiliert) herunter ..."
+wget -q --show-progress -O "${BUILD_DIR}/TrafkVerseScreensaver" "$BINARY_URL"
 
-info "Baue Screensaver (das Makefile lädt tsf.h automatisch) ..."
-make -C "$BUILD_DIR"
-[ -x "${BUILD_DIR}/TrafkVerseScreensaver" ] || { err "Build fehlgeschlagen: 'TrafkVerseScreensaver' wurde nicht erzeugt."; exit 1; }
-ok "Build erfolgreich."
+# Plausibilitätscheck: eine echte ELF-Executable beginnt mit dem Magic-Byte
+# 0x7F 'E' 'L' 'F' – fängt z. B. ab, dass statt der Datei aus Versehen eine
+# 404-HTML-Seite heruntergeladen wurde.
+if [ "$(head -c 4 "${BUILD_DIR}/TrafkVerseScreensaver" | tail -c 3)" != "ELF" ]; then
+    err "TrafkVerseScreensaver sieht nicht wie eine gültige ausführbare Datei aus (evtl. falsche URL oder Git-LFS-Platzhalter?)."
+    err "Prüfe die URL: ${BINARY_URL}"
+    exit 1
+fi
+chmod +x "${BUILD_DIR}/TrafkVerseScreensaver"
+ok "Download erfolgreich."
 
 # ---------------------------------------------------------------- Installation
 # Ordner prüfen (Symlinks werden wie üblich verfolgt)
@@ -146,7 +149,7 @@ install -m 644 "${BUILD_DIR}/TrafkSF2.sf2" "${INSTALL_DIR}/TrafkSF2.sf2"
 install -m 644 "${BUILD_DIR}/Icon.png"     "${INSTALL_DIR}/Icon.png"
 install -m 644 "${BUILD_DIR}/LICENSE"      "${INSTALL_DIR}/LICENSE"
 
-# Kontrolle: stimmen die installierten Dateien mit den frisch gebauten/geladenen überein?
+# Kontrolle: stimmen die installierten Dateien mit den frisch geladenen überein?
 for f in TrafkVerseScreensaver TrafkSF2.sf2 Icon.png LICENSE; do
     if ! cmp -s "${BUILD_DIR}/${f}" "${INSTALL_DIR}/${f}"; then
         err "${f} im Zielordner stimmt nicht mit der neuen Version überein!"
